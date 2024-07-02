@@ -195,10 +195,10 @@
     - name: Deploy applicatiuons to destination BigIP Next
       delegate_to: localhost
       uri:
-        url: "https://{{ next.address }}/mgmt/shared/appsvcs/declare/{{item.id}}/deployments?async=false"
+        url: "https://{{ next.address }}/mgmt/shared/fast/appsvcs/{{item.id}}/deployments"
         method: POST
-        body:
-          target: "{{item.target}}"
+        body: 
+          deployments: "{{item.body}}"
         body_format: json
         headers:
            Authorization: "Bearer {{  access_token  }}"

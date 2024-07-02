@@ -8,10 +8,17 @@ class FilterModule(object):
         rValue = []
         for key, value in data.items():
             ip_arr = tree.get(key, [])
+            deployments = []
             for ip in ip_arr:
+                deployments.append({
+                    "target": {
+                        "address": ip
+                    }
+                })
+            if len(deployments) > 0:
                 rValue.append({
-                    "id": value,
-                    "target": ip
+                          "id": key,
+                          "body": deployments
                 })
 
         return rValue
