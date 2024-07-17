@@ -23,17 +23,21 @@ def remove_prefix(data, prefix):
 class FilterModule(object):
     def filters(self):
         return {
-            'get_document_ids_map': self.get_document_ids_map
+            'get_document_info_map': self.get_document_info_map
         }
 
-    def get_document_ids_map(self, data, migrate_app_prefix):
+    def get_document_info_map(self, data, migrate_app_prefix):
         parsed = data["results"]
         rValue = {}
         for request in parsed:
             migrate_vs_name = extract_service_http_node_name(request["item"]["json"])
             if migrate_vs_name is None:
                 print(migrate_vs_name)
-            document_id = request["json"]["id"]
-            rValue[migrate_vs_name] = document_id
+            document_info = {
+                "id": request["json"]["id"],
+                "as3": request["item"]["json"]
+            }
+
+            rValue[migrate_vs_name] = document_info
 
         return remove_prefix(rValue, migrate_app_prefix)

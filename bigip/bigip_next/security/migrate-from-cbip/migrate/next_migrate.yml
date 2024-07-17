@@ -72,7 +72,7 @@
       set_fact:
         migrate_apps: "{{ next_apps.json | json_query(query) | reject('equalto', []) | flatten(1) }} "
       vars:
-        query: "_embedded.applications[?virtual_servers[?status=='green' && length(irules) == `0` && length(certificates) == `0`]]"
+        query: "_embedded.applications[?virtual_servers[?(status=='green' || status=='yellow') && length(irules) == `0` && length(certificates) == `0`]]"
 
     - name: Extract not installed WAFs
       set_fact:
@@ -182,11 +182,15 @@
 
     - name: Map applications to document ids
       set_fact: 
-        apps_to_id_map: "{{ documents | get_document_ids_map(migrate_app_prefix) }}"
+        apps_to_info_map: "{{ documents | get_document_info_map(migrate_app_prefix) }}"
+
+    - name: Map Info
+      debug:
+        msg: "{{ apps_to_info_map }}"
 
     - name: Create Deployment array by tree
       set_fact:
-        deployment_array: "{{ apps_to_id_map | create_deployment_array(deploy_tree) }}"
+        deployment_array: "{{ apps_to_info_map | create_deployment_array(documents, deploy_tree) }}"
 
     - name: Deploy Arr
       debug: 
@@ -195,10 +199,9 @@
     - name: Deploy applicatiuons to destination BigIP Next
       delegate_to: localhost
       uri:
-        url: "https://{{ next.address }}/mgmt/shared/appsvcs/declare/{{item.id}}/deployments?async=false"
+        url: "https://{{ next.address }}/mgmt/shared/fast/appsvcs/{{item.id}}/deployments"
         method: POST
-        body:
-          target: "{{item.target}}"
+        body: "{{ item.body }}"
         body_format: json
         headers:
            Authorization: "Bearer {{  access_token  }}"
@@ -207,7 +210,7 @@
         status_code: 202
       loop: "{{ deployment_array }}"
       loop_control:
-        pause: 30
+        pause: 10
       register: deployment_result
 
     - name: Deployment Results
